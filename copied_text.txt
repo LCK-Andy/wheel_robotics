@@ -1,127 +1,157 @@
-Excellent — let’s level up 🚀  
-This time we’ll go beyond simple circular motion and do a **Lagrangian analysis of a pendulum on a moving cart**, a **two-degree-of-freedom dynamic system** that still retains circular motion (the pendulum swings along a circular arc).
+Sympy makes it easy to work with **matrices**, **Jacobians**, and **Hessians** symbolically. Here’s a practical overview with examples.  
 
 ---
 
-## ⚙️ Problem Setup — Pendulum on a Moving Cart
+## 🧮 1. Defining and Manipulating Matrices
 
-Imagine a cart of mass \( M \) that can move horizontally without friction, carrying a pendulum of length \( l \) and mass \( m \).
-
-- **Generalized coordinates:**
-  - \( x(t) \): horizontal displacement of the cart  
-  - \( \theta(t) \): angular displacement of the pendulum from the vertical  
-
-This is a **2D circular motion system** (the pendulum bob moves on a circular arc) combined with **translational motion**.
-
----
-
-### 🧭 Goal
-
-Use **Euler–Lagrange equations** to derive the **coupled equations of motion** symbolically.
-
----
-
-### 💻 Sympy Implementation
+You can create matrices explicitly or from symbolic variables.
 
 ```python
-import sympy as sp
+from sympy import Matrix, symbols
 
-# Define time and symbols
-t = sp.Symbol('t', real=True)
-M, m, l, g = sp.symbols('M m l g', positive=True)
+x, y, z = symbols('x y z')
 
-# Generalized coordinates
-x = sp.Function('x')(t)       # cart position
-theta = sp.Function('theta')(t)  # pendulum angle
-x_dot = sp.diff(x, t)
-theta_dot = sp.diff(theta, t)
+# Define a matrix explicitly
+A = Matrix([[1, 2], [3, 4]])
 
-# Cartesian coordinates of pendulum bob
-x_p = x + l * sp.sin(theta)
-y_p = -l * sp.cos(theta)
+# Define a symbolic matrix
+B = Matrix([[x, y], [y, z]])
 
-# Kinetic energy (cart + pendulum)
-T_cart = (1/2) * M * x_dot**2
-T_pendulum = (1/2) * m * (sp.diff(x_p, t)**2 + sp.diff(y_p, t)**2)
-T = sp.simplify(T_cart + T_pendulum)
+# Basic operations
+det_A = A.det()          # Determinant
+inv_A = A.inv()          # Inverse
+trace_B = B.trace()      # Trace
+trans_B = B.T            # Transpose
 
-# Potential energy (take zero at pendulum pivot)
-V = m * g * l * (1 - sp.cos(theta))  # height change relative to hanging position
+# Matrix product
+prod = A * B
 
-# Lagrangian
-L = T - V
-
-# Compute Euler–Lagrange equations for x(t) and θ(t)
-coords = [x, theta]
-EL_eqs = []
-for q in coords:
-    dL_dqdot = sp.diff(L, sp.diff(q, t))
-    dL_dq = sp.diff(L, q)
-    EL = sp.diff(dL_dqdot, t) - dL_dq
-    EL_eqs.append(sp.simplify(EL))
-
-# The two equations of motion
-E1, E2 = EL_eqs  # E1 for x(t), E2 for theta(t)
-
-print("Euler–Lagrange Equation for x(t):")
-sp.pprint(sp.Eq(E1, 0))
-
-print("\nEuler–Lagrange Equation for θ(t):")
-sp.pprint(sp.Eq(E2, 0))
+print(det_A, inv_A, trace_B, trans_B, prod)
 ```
 
 ---
 
-### 🧮 Symbolic Results (Simplified Form)
+## 🧰 2. Jacobian Matrix
 
-After simplifying, you'll get the **two coupled nonlinear equations**:
+The **Jacobian** is the matrix of all first-order partial derivatives of a vector function.
+
+For a vector function **f(x, y)** = [f₁(x, y), f₂(x, y)],  
+the Jacobian wrt [x, y] is:
 
 \[
-(M + m)\ddot{x} + m l(\ddot{\theta}\cos\theta - \dot{\theta}^2\sin\theta) = 0
+J = \begin{bmatrix}
+∂f₁/∂x & ∂f₁/∂y \\
+∂f₂/∂x & ∂f₂/∂y
+\end{bmatrix}
 \]
 
-\[
-l\ddot{\theta} + \ddot{x}\cos\theta + g\sin\theta = 0
-\]
+**Example:**
 
-These describe how the cart and pendulum interact dynamically.
+```python
+from sympy import symbols, Matrix
+
+x, y = symbols('x y')
+
+# Define a vector function
+f = Matrix([x**2 + y, x*y + y**2])
+
+# Variables
+vars = Matrix([x, y])
+
+# Compute Jacobian
+J = f.jacobian(vars)
+J
+```
+
+Expected output:
+
+```
+Matrix([
+[2*x, 1],
+[y, 2*y + x]
+])
+```
 
 ---
 
-### 🧠 Insight
+## ⚙️ 3. Hessian Matrix
 
-- When the **cart is fixed** (\( \ddot{x} = 0 \)), the second equation reduces to the **simple pendulum**:  
-  \[
-  l\ddot{\theta} + g\sin\theta = 0
-  \]
-
-- When the cart moves, its acceleration directly affects the pendulum’s angular motion, resulting in a **coupled mechanical system** — famous in **control theory** (inverted pendulum problem).
-
----
-
-### ⚙️ Optional Linearization (Small Angles)
-
-For small angles (\( \sin\theta \approx \theta,\ \cos\theta \approx 1 \)),  
-we can **linearize** the system with `sympy.series()` or `sp.simplify()` to obtain:
+The **Hessian** is a **square** matrix of second-order partial derivatives of a scalar function.
 
 \[
-(M + m)\ddot{x} + m l \ddot{\theta} = 0
-\]
-\[
-l \ddot{\theta} + \ddot{x} + g \theta = 0
+H = \begin{bmatrix}
+∂²f/∂x₁² & ∂²f/∂x₁∂x₂ & ... \\
+∂²f/∂x₂∂x₁ & ∂²f/∂x₂² & ... \\
+... & ... & ...
+\end{bmatrix}
 \]
 
-Which can be used for designing **control systems**.
+**Example:**
+
+```python
+from sympy import hessian
+
+x, y = symbols('x y')
+f = x**3 + x*y + y**2
+
+H = hessian(f, (x, y))
+H
+```
+
+Expected result:
+
+```
+Matrix([
+[6*x, 1],
+[1, 2]
+])
+```
 
 ---
 
-### 🚀 Applications
+## 🧩 4. Numeric Evaluation and Substitution
 
-- **Self-balancing robots** (e.g., Segway)  
-- **Rocket launch systems** and **crane payload sway**  
-- **Robotics** — arms mounted on moving platforms  
-- **Inverted pendulum** stability analysis  
+Once you compute Jacobians or Hessians, you can substitute values or evaluate them numerically.
+
+```python
+# Substitute x=1, y=2 into the Hessian
+H_val = H.subs({x: 1, y: 2})
+
+# Convert symbolic to numeric
+H_numeric = H_val.evalf()
+
+print(H_numeric)
+```
 
 ---
 
-Would you like me to extend this and show how to **solve these coupled equations symbolically** for small angles (or simulate the motion numerically and plot it)?
+## 🧠 5. Advanced: Block Matrices, Eigenvalues, etc.
+
+```python
+# Block matrix
+A = Matrix([[1, 2], [3, 4]])
+B = Matrix([[x, y], [y, z]])
+M = Matrix.vstack(A, B)
+
+# Eigen decomposition
+eigvals = B.eigenvals()
+eigvecs = B.eigenvects()
+
+print(eigvals)
+```
+
+---
+
+### 📚 Summary
+
+| Concept | Sympy Function | Description |
+|----------|----------------|--------------|
+| Matrix | `Matrix(...)` | Create and manipulate matrices |
+| Jacobian | `f.jacobian(vars)` | Compute Jacobian of vector function |
+| Hessian | `hessian(f, vars)` | Compute Hessian of scalar function |
+| Substitute values | `.subs({...})` | Plug in numerical or symbolic substitutions |
+| Evaluate numerically | `.evalf()` | Get float approximation |
+
+---
+
+Would you like me to show a **visual example** (heatmap or contour plot) of a Hessian or gradient field using Sympy + Matplotlib?
